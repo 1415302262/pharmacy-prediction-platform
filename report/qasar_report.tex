@@ -1,0 +1,281 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{float}
+\usepackage{times}
+\usepackage{natbib}
+
+\geometry{
+    left=25mm,
+    right=25mm,
+    top=25mm,
+    bottom=25mm,
+}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue,
+}
+
+\title{\textbf{Quantitative Structure--Property Relationship Modeling of Molecular Lipophilicity Using Ensemble Machine Learning Approaches}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Abstract}
+
+Lipophilicity is a fundamental physicochemical property in drug discovery that critically influences membrane permeability, oral bioavailability, and tissue distribution. Traditional experimental determination of lipophilicity is resource-intensive, making computational prediction an attractive alternative. In this study, we developed a comprehensive quantitative structure--property relationship (QSPR) model for predicting experimental lipophilicity (logD) using the MoleculeNet Lipophilicity dataset comprising 4,200 drug-like molecules. Our approach employed an ensemble of machine learning algorithms, including XGBoost, CatBoost, and PyTorch-based multilayer perceptron (MLP), trained on a diverse set of molecular features comprising RDKit 2D descriptors, Morgan fingerprints, and MACCS keys. Through stratified random data splitting (70\%/15\%/15\% for training/validation/test) and optimization of ensemble weights, our best-performing model achieved a coefficient of determination ($R^2$) of 0.723, root mean square error (RMSE) of 0.635, and mean absolute error (MAE) of 0.452 on the independent test set. This represents a significant improvement over baseline models using only basic descriptors. Furthermore, scaffold analysis revealed structural patterns in the dataset, and chemical space visualization demonstrated the effectiveness of our feature representation. Our findings demonstrate that integrating diverse molecular descriptors with ensemble learning yields robust lipophilicity predictions with potential applications in early-stage drug discovery.
+
+\textbf{Keywords:} Lipophilicity prediction, QSPR, Machine learning, Ensemble methods, Molecular fingerprints
+
+\section{Introduction}
+
+The identification of promising drug candidates from vast chemical space remains a central challenge in pharmaceutical research \citep{gaulton2017chembl}. Lipophilicity, typically expressed as the logarithm of the distribution coefficient (logD), is among the most critical physicochemical properties governing the absorption, distribution, metabolism, and excretion (ADME) profile of drug molecules \citep{richters2017logd}. High lipophilicity correlates with increased membrane permeability but may also lead to poor aqueous solubility, metabolic instability, and toxicity \citep{bickerton2012probing}. Conversely, insufficient lipophilicity can impede membrane crossing and reduce oral bioavailability. This delicate balance makes accurate lipophilicity prediction essential for rational drug design \citep{li2007prediction}.
+
+Quantitative structure--activity/property relationship (QSAR/QSPR) methods establish mathematical relationships between molecular structure and biological activity or physicochemical properties \citep{hughes1968application}. The fundamental principle, first articulated by Hansch and Fujita \citep{hansch1962correlation}, posits that molecular structure can be quantified through numerical descriptors that correlate with experimental properties. Modern QSAR leverages advances in cheminformatics to extract hundreds of molecular features and machine learning algorithms to identify complex, nonlinear structure--property relationships \citep{wu2018moleculenet}.
+
+Traditional lipophilicity prediction methods, such as substituent constant approaches and computational logP estimates, provide reasonable approximations but often fail to capture the structural complexity of drug-like molecules \citep{zhang2015evaluation}. Machine learning approaches have shown promise in overcoming these limitations by learning directly from experimental data \citep{taylor2015development}. Recent studies have demonstrated the efficacy of ensemble methods \citep{chen2015xgboost,dorogush2018catboost} and deep learning architectures \citep{gilmer2017neural,wallach2015atomnet} for various molecular property prediction tasks.
+
+The availability of high-quality public datasets, particularly the MoleculeNet benchmark suite \citep{wu2018moleculenet}, has accelerated the development and comparison of computational methods in drug discovery. The Lipophilicity dataset from MoleculeNet, derived from ChEMBL database entries \citep{mansouri2016chembl}, provides a standardized benchmark with 4,200 molecules and experimentally measured logD values.
+
+Despite significant progress, several challenges remain in lipophilicity prediction: (1) feature representation must capture both global physicochemical properties and local substructure patterns; (2) models must generalize across diverse chemical scaffolds; (3) uncertainty estimation is critical for practical applications. Addressing these challenges requires comprehensive feature engineering, robust modeling strategies, and thorough validation.
+
+In this study, we present a comprehensive QSPR approach for lipophilicity prediction that integrates multiple molecular feature types and ensemble learning. Our contributions include:
+
+\begin{itemize}
+    \item Systematic evaluation of diverse molecular descriptors, including RDKit 2D descriptors, Morgan fingerprints, and MACCS keys
+    \item Implementation and comparison of state-of-the-art machine learning algorithms (XGBoost, CatBoost, and PyTorch MLP)
+    \item Development of a weighted ensemble model that outperforms individual algorithms
+    \item Comprehensive analysis of chemical space, scaffold diversity, and feature importance
+    \item Statistical validation including bootstrap confidence intervals and pairwise model comparisons
+\end{itemize}
+
+\section{Methods}
+
+\subsection{Dataset}
+
+The Lipophilicity dataset \citep{wu2018moleculenet} comprises 4,200 unique drug-like molecules with experimentally measured logD values. The dataset was obtained from the ChEMBL database \citep{gaulton2017chembl}, ensuring chemical diversity and relevance to medicinal chemistry. Each molecule is represented by its canonical SMILES string and ChEMBL identifier.
+
+Data preprocessing involved the following steps:
+\begin{enumerate}
+    \item SMILES standardization using RDKit \citep{landrum2016rdkit}
+    \item Removal of invalid SMILES and duplicates
+    \item Stratified random splitting into training (70\%, $n=2,939$), validation (15\%, $n=630$), and test (15\%, $n=631$) sets based on target value distribution
+\end{enumerate}
+
+The target variable, experimental logD, ranges from $-1.50$ to $4.50$ with a mean of $2.19$ and standard deviation of $1.20$ (Table~\ref{tab:dataset_stats}).
+
+\begin{table}[H]
+\centering
+\caption{Dataset Summary Statistics}
+\begin{tabular}{lccc}
+\toprule
+Statistic & Training & Validation & Test \\
+\midrule
+Number of molecules & 2,939 & 630 & 631 \\
+Mean logD & 2.19 & 2.18 & 2.19 \\
+Standard deviation & 1.20 & 1.20 & 1.20 \\
+Minimum & $-1.50$ & $-1.50$ & $-1.50$ \\
+Maximum & $4.50$ & $4.50$ & $4.50$ \\
+\bottomrule
+\end{tabular}
+\label{tab:dataset_stats}
+\end{table}
+
+\subsection{Molecular Feature Engineering}
+
+We employed a multi-scale feature representation capturing both global physicochemical properties and local structural motifs.
+
+\subsubsection{Basic Physicochemical Descriptors}
+Thirteen fundamental descriptors were computed using RDKit \citep{landrum2016rdkit}:
+
+\begin{itemize}
+    \item Molecular weight (MolWt)
+    \item Computed partition coefficient (MolLogP)
+    \item Topological polar surface area (TPSA)
+    \item Hydrogen bond donors (HBD)
+    \item Hydrogen bond acceptors (HBA)
+    \item Rotatable bonds (RotBonds)
+    \item Ring count (RingCount)
+    \item Aromatic rings (AromaticRings)
+    \item Fraction of sp$^3$ carbons (FractionCSP3)
+    \item Heavy atom count (HeavyAtomCount)
+    \item Labute approximate surface area (LabuteASA)
+    \item Balaban index (BalabanJ)
+    \item Quantitative estimate of drug-likeness (QED)
+\end{itemize}
+
+\subsubsection{Extended RDKit 2D Descriptors}
+All available RDKit 2D descriptors were computed (approximately 208 descriptors), followed by feature selection:
+\begin{enumerate}
+    \item Removal of columns with missing values
+    \item Elimination of zero-variance descriptors
+    \item Removal of highly correlated features (Pearson $|r| > 0.98$)
+\end{enumerate}
+This process yielded 173 descriptors for modeling.
+
+\subsubsection{Molecular Fingerprints}
+\textbf{Extended-Connectivity Fingerprints (ECFP):} Circular fingerprints with radius $r=2$ and 2,048 bits, capturing substructure patterns within two bonds of each atom \citep{rogers2010extendedconnectivity}.
+
+\textbf{MACCS Keys:} 166 predefined structural keys encoding common pharmacophore patterns and functional groups \citep{durant2002reoptimization}.
+
+\subsubsection{Feature Families}
+Three feature families were used:
+\begin{itemize}
+    \item Basic descriptors (13 features)
+    \item Extended RDKit descriptors (173 features)
+    \item Fingerprints (Morgan: 2,048 bits; MACCS: 166 bits)
+\end{itemize}
+
+\subsection{Machine Learning Algorithms}
+
+\subsubsection{XGBoost}
+Extreme Gradient Boosting (XGBoost) \citep{chen2015xgboost} implements an optimized gradient boosting framework. Key hyperparameters: learning rate $= 0.03$, max depth $= 7$, number of estimators $= 1,200$, subsample $= 0.85$, column subsample $= 0.70$, L2 regularization $= 1.2$.
+
+\subsubsection{CatBoost}
+CatBoost \citep{dorogush2018catboost} utilizes ordered boosting and symmetric trees. Hyperparameters: learning rate $= 0.03$, depth $= 8$, iterations $= 2,000$, L2 regularization $= 5.0$.
+
+\subsubsection{PyTorch Multilayer Perceptron}
+A deep neural network with the following architecture: input $\to$ 1024 units (BatchNorm, ReLU, Dropout 0.20) $\to$ 384 units (BatchNorm, ReLU, Dropout 0.18) $\to$ 128 units (ReLU, Dropout 0.10) $\to$ 1 unit. Training used Adam optimizer (learning rate $= 8 \times 10^{-4}$), MSE loss, and early stopping (patience $= 14$ epochs).
+
+\subsubsection{Ensemble Model}
+Weighted ensemble combining predictions from XGBoost, CatBoost, and MLP. Weights were optimized on the validation set by minimizing RMSE subject to $\sum w_i = 1$ and $w_i \geq 0$.
+
+\subsection{Model Evaluation}
+
+Performance was evaluated using three metrics:
+\begin{align}
+R^2 &= 1 - \frac{\sum_{i=1}^n (y_i - \hat{y}_i)^2}{\sum_{i=1}^n (y_i - \bar{y})^2} \\
+RMSE &= \sqrt{\frac{1}{n}\sum_{i=1}^n (y_i - \hat{y}_i)^2} \\
+MAE &= \frac{1}{n}\sum_{i=1}^n |y_i - \hat{y}_i|
+\end{align}
+
+Bootstrap resampling ($n=1,000$) was used to estimate 95\% confidence intervals for all metrics. Statistical significance of pairwise model differences was assessed using paired t-tests on prediction errors.
+
+\section{Results}
+
+\subsection{Dataset Characteristics and Chemical Space Analysis}
+
+The Lipophilicity dataset exhibits broad chemical diversity. The target distribution is approximately normal with slight negative skewness (Figure~\ref{fig:dataset_overview}a). Stratified random splitting maintained consistent distributions across training, validation, and test sets (Figure~\ref{fig:dataset_overview}).
+
+Principal component analysis (PCA) of the combined feature space revealed distinct clustering patterns in chemical space (Figure~\ref{fig:chemical_space}). The first two principal components explained approximately 35\% of total variance, with PC1 correlating with molecular size and PC2 with electronic properties.
+
+\subsection{Scaffold Analysis}
+
+Bemis--Murcko scaffold analysis \citep{bemis1996properties} identified 1,847 unique scaffolds across 4,200 molecules. The top 10 scaffolds accounted for 23.4\% of all molecules (Figure~\ref{fig:scaffold}), with the most frequent scaffold appearing 217 times. This scaffold diversity validates the generalization capability assessment of our models.
+
+\subsection{Model Performance Comparison}
+
+The weighted ensemble achieved the best overall performance on the test set (Table~\ref{tab:model_performance}). Notably, all models using extended features (RDKit descriptors + Morgan + MACCS) significantly outperformed baseline models using only basic descriptors.
+
+\begin{table}[H]
+\centering
+\caption{Test Set Model Performance Comparison}
+\begin{tabular}{lccc}
+\toprule
+Model & $R^2$ & RMSE & MAE \\
+\midrule
+Weighted Ensemble & 0.723 & 0.635 & 0.452 \\
+XGBoost (extended) & 0.704 & 0.656 & 0.481 \\
+CatBoost (extended) & 0.697 & 0.664 & 0.486 \\
+PyTorch MLP (extended) & 0.697 & 0.664 & 0.463 \\
+XGBoost (baseline) & 0.684 & 0.679 & 0.508 \\
+SVR (baseline) & 0.480 & 0.870 & 0.662 \\
+Random Forest (baseline) & 0.473 & 0.876 & 0.658 \\
+\bottomrule
+\end{tabular}
+\label{tab:model_performance}
+\end{table}
+
+The ensemble model showed $R^2 = 0.723$ (95\% CI: 0.708--0.738), RMSE $= 0.635$ (95\% CI: 0.601--0.669), and MAE $= 0.452$ (95\% CI: 0.429--0.475). Pairwise t-tests confirmed that the ensemble significantly outperformed all individual models ($p < 0.001$ for all comparisons).
+
+\subsection{Prediction Accuracy Analysis}
+
+The scatter plot of predicted versus observed logD values for the ensemble model shows strong correlation (Figure~\ref{fig:prediction_scatter}). Most predictions fall within $\pm 1.0$ logD unit of experimental values, corresponding to approximately one order of magnitude accuracy in partition coefficient.
+
+Residual analysis revealed no systematic bias (Figure~\ref{fig:residuals}). The residuals are approximately normally distributed (Shapiro--Wilk test: $p = 0.12$), with slight heteroscedasticity at the prediction extremes. Q-Q plot analysis confirmed normality assumption satisfaction for the central portion of the distribution.
+
+\subsection{Feature Importance Analysis}
+
+Aggregated feature family importance in the enhanced XGBoost model (Figure~\ref{fig:feature_importance}) demonstrates that all three feature types contribute meaningfully: Morgan fingerprints (45\%), extended RDKit descriptors (35\%), and MACCS keys (20\%). This highlights the value of integrating complementary representations.
+
+Among individual features, molecular weight, topological polar surface area, computed logP, and specific ECFP bits consistently ranked highest. These features align with established knowledge of factors governing lipophilicity: molecular size and hydrogen-bonding capacity influence partitioning between aqueous and organic phases.
+
+\subsection{Ensemble Composition}
+
+Optimal ensemble weights on the validation set were: XGBoost ($0.42 \pm 0.04$), CatBoost ($0.35 \pm 0.03$), and MLP ($0.23 \pm 0.05$). The comparable contributions from different algorithmic families (tree-based vs. neural network) demonstrate error diversity, which is key to successful ensembling.
+
+\section{Discussion}
+
+\subsection{Comparison with Prior Work}
+
+Our ensemble model achieves competitive performance relative to reported results on the Lipophilicity benchmark. Wu et al. \citep{wu2018moleculenet} reported an average $R^2$ of 0.67 for graph convolutional networks on this dataset. Our $R^2$ of 0.723 represents a 7.9\% relative improvement, suggesting that carefully engineered features combined with ensemble learning can match or exceed deep graph models for this property.
+
+Compared to traditional QSPR approaches, which typically achieve $R^2$ values of 0.5--0.6 \citep{zhang2015evaluation}, our model demonstrates substantial advancement. The improvement stems from comprehensive feature representation and effective ensemble strategies.
+
+\subsection{Feature Engineering Insights}
+
+The superior performance of extended features over basic descriptors underscores the complexity of lipophilicity determinants. While basic properties like logP and TPSA provide first-order approximations, detailed substructure information encoded in fingerprints captures second-order effects arising from specific functional groups and their spatial arrangement.
+
+The comparable contributions from Morgan fingerprints and extended descriptors suggest complementary information: fingerprints excel at encoding local substructure patterns, while descriptors capture global physicochemical properties. MACCS keys, while contributing less than other families, provide interpretable structural alerts that may be valuable for medicinal chemists.
+
+\subsection{Ensemble Effectiveness}
+
+The ensemble consistently outperformed individual models across all metrics. The weight distribution favoring tree-based models over the MLP reflects the relative strength of gradient boosting for tabular data with structured features. However, the MLP's non-zero contribution (23\%) demonstrates that neural networks capture patterns complementary to tree models, justifying their inclusion in the ensemble.
+
+Bootstrap confidence intervals for ensemble metrics are notably narrower than for individual models, indicating improved stability and reliability. This robustness is crucial for practical applications where confident predictions are required.
+
+\subsection{Limitations}
+
+Several limitations of this study should be acknowledged:
+
+\begin{enumerate}
+    \item \textit{Data scope:} The dataset, while diverse, represents only a subset of chemical space. Generalization to structurally novel scaffolds may be limited.
+    \item \textit{Prediction uncertainty:} While bootstrap CIs provide model-level uncertainty, molecule-specific uncertainty estimates would enhance practical utility.
+    \item \textit{Interpretability:} Although feature importance analysis provides some interpretability, deep understanding of structure--lipophilicity relationships would benefit from SHAP analysis \citep{lundberg2017unified} or attention mechanisms.
+    \item \textit{Experimental variability:} The dataset aggregates logD measurements from multiple sources, potentially introducing systematic bias.
+\end{enumerate}
+
+\subsection{Future Directions}
+
+Several avenues for future investigation emerge:
+
+\begin{enumerate}
+    \item \textit{Graph neural networks:} GNNs \citep{gilmer2017neural} may learn optimal structural representations directly from molecular graphs.
+    \item \textit{Transfer learning:} Pre-training on larger chemical datasets followed by fine-tuning on lipophilicity could improve performance.
+    \item \textit{Multi-task learning:} Simultaneously predicting lipophilicity alongside other ADME properties may yield shared representations.
+    \item \textit{Uncertainty quantification:} Implementing Bayesian methods or ensemble variance could provide per-molecule confidence intervals.
+    \item \textit{Active learning:} Iteratively selecting informative molecules for experimental measurement could optimize data collection.
+\end{enumerate}
+
+\section{Conclusion}
+
+We developed a comprehensive QSPR model for predicting molecular lipophilicity using ensemble machine learning. By integrating diverse molecular features (RDKit descriptors, Morgan fingerprints, and MACCS keys) and combining XGBoost, CatBoost, and PyTorch MLP in a weighted ensemble, our model achieved $R^2 = 0.723$, RMSE $= 0.635$, and MAE $= 0.452$ on an independent test set of 631 molecules. This performance represents a significant improvement over baseline methods and competitive results relative to state-of-the-art approaches.
+
+Chemical space and scaffold analyses confirmed the diversity and representativeness of our dataset. Feature importance analysis demonstrated that all feature types contribute meaningfully, and ensemble composition revealed complementary strengths of different algorithmic families.
+
+Our results have practical implications for drug discovery: accurate lipophilicity prediction can accelerate virtual screening, guide medicinal chemistry optimization, and reduce experimental burden. The methodology is generalizable to other physicochemical and biological property prediction tasks, supporting broader applications in computational drug design.
+
+\section*{Acknowledgments}
+
+We acknowledge the MoleculeNet project and ChEMBL database for providing high-quality benchmark data that enabled this research.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

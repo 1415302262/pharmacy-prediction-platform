@@ -1,0 +1,58 @@
+{
+  "best_model": "XGB_desc_fp",
+  "mlp_device": "cuda",
+  "split_strategy": "stratified_random_split",
+  "dataset_summary": {
+    "n_molecules": 4200,
+    "target_name": "experimental lipophilicity (logD)",
+    "target_min": -1.5,
+    "target_max": 4.5,
+    "target_mean": 2.1863357142857143,
+    "target_std": 1.2030037133871043,
+    "split_stats": {
+      "test": {
+        "count": 631,
+        "mean": 2.1853,
+        "std": 1.2072,
+        "min": -1.48,
+        "max": 4.48
+      },
+      "train": {
+        "count": 2939,
+        "mean": 2.1865,
+        "std": 1.2059,
+        "min": -1.5,
+        "max": 4.5
+      },
+      "valid": {
+        "count": 630,
+        "mean": 2.1866,
+        "std": 1.1869,
+        "min": -1.34,
+        "max": 4.5
+      }
+    }
+  },
+  "test_metrics": {
+    "RF_descriptors": {
+      "r2": 0.47281403584565485,
+      "rmse": 0.8758317431476527,
+      "mae": 0.6577659332610474
+    },
+    "SVR_descriptors": {
+      "r2": 0.4801656612305917,
+      "rmse": 0.8697035526420702,
+      "mae": 0.6615233919279717
+    },
+    "XGB_desc_fp": {
+      "r2": 0.6834608316421509,
+      "rmse": 0.6786603730391735,
+      "mae": 0.5075300335884094
+    },
+    "PyTorch_MLP_desc_fp": {
+      "r2": 0.6495634317398071,
+      "rmse": 0.714074393075277,
+      "mae": 0.5229060649871826
+    }
+  }
+}

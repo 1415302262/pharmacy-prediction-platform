@@ -1,0 +1,49 @@
+{
+  "best_model_by_rmse_mean": "Weighted_Ensemble_scaffold",
+  "best_rmse_mean": 0.6488834461423647,
+  "best_r2_mean": 0.7137610673904419,
+  "strict_validation_note": "Scaffold-aware repeated validation is stricter than random split; lower metrics are expected but credibility is higher.",
+  "repeat0_shap_model": "CatBoost_rich_scaffold",
+  "top_shap_features": [
+    {
+      "feature": "MolLogP",
+      "mean_abs_shap": 0.412268830846539
+    },
+    {
+      "feature": "fr_COO",
+      "mean_abs_shap": 0.24056060972715265
+    },
+    {
+      "feature": "VSA_EState5",
+      "mean_abs_shap": 0.0711526929380312
+    },
+    {
+      "feature": "MACCS_104",
+      "mean_abs_shap": 0.05320429317613325
+    },
+    {
+      "feature": "SMR_VSA10",
+      "mean_abs_shap": 0.05126974279406868
+    },
+    {
+      "feature": "SlogP_VSA10",
+      "mean_abs_shap": 0.04403376860137768
+    },
+    {
+      "feature": "PEOE_VSA13",
+      "mean_abs_shap": 0.04195036779959189
+    },
+    {
+      "feature": "BalabanJ",
+      "mean_abs_shap": 0.04132194655957119
+    },
+    {
+      "feature": "PEOE_VSA7",
+      "mean_abs_shap": 0.03990645332706832
+    },
+    {
+      "feature": "Morgan_1308",
+      "mean_abs_shap": 0.02704236157538497
+    }
+  ]
+}

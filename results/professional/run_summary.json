@@ -1,0 +1,69 @@
+{
+  "dataset": {
+    "n_molecules": 4200,
+    "target_name": "experimental lipophilicity (logD)",
+    "target_min": -1.5,
+    "target_max": 4.5,
+    "target_mean": 2.1863357142857143,
+    "target_std": 1.2030037133871043,
+    "split_stats": {
+      "test": {
+        "count": 631,
+        "mean": 2.1853,
+        "std": 1.2072,
+        "min": -1.48,
+        "max": 4.48
+      },
+      "train": {
+        "count": 2939,
+        "mean": 2.1865,
+        "std": 1.2059,
+        "min": -1.5,
+        "max": 4.5
+      },
+      "valid": {
+        "count": 630,
+        "mean": 2.1866,
+        "std": 1.1869,
+        "min": -1.34,
+        "max": 4.5
+      }
+    }
+  },
+  "best_model": "Weighted_Ensemble_rich",
+  "ensemble_weights": {
+    "XGB_rich_desc_fp_maccs": 0.379844824828112,
+    "CatBoost_rich_desc_fp_maccs": 0.1420896288396818,
+    "PyTorch_MLP_rich_desc_fp_maccs": 0.4780655463322062
+  },
+  "test_metrics": {
+    "r2": 0.7231979370117188,
+    "rmse": 0.6346341275679611,
+    "mae": 0.45173126459121704
+  },
+  "bootstrap_ci": {
+    "r2": {
+      "mean": 0.7232771356768716,
+      "std": 0.028189942061782356,
+      "ci_lower": 0.6632955431272762,
+      "ci_upper": 0.7752344479781758
+    },
+    "rmse": {
+      "mean": 0.6342963576316833,
+      "std": 0.031216993927955627,
+      "ci_lower": 0.5739140376448632,
+      "ci_upper": 0.6972868084907532
+    },
+    "mae": {
+      "mean": 0.4519859552383423,
+      "std": 0.017621256411075592,
+      "ci_lower": 0.4179944068193436,
+      "ci_upper": 0.48604564368724823
+    }
+  },
+  "feature_importance": {
+    "RDKit descriptors": 0.26259881258010864,
+    "Morgan fingerprints": 0.6088573932647705,
+    "MACCS keys": 0.12854376435279846
+  }
+}

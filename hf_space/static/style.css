@@ -1,0 +1,106 @@
+body {
+  font-family: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #f6f8fb;
+  color: #12212f;
+}
+
+.hero-section {
+  background: linear-gradient(135deg, #eaf6fb 0%, #f9fcfd 100%);
+  border-bottom: 1px solid #e2ecf3;
+}
+
+.eyebrow {
+  color: #118ab2;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.88rem;
+}
+
+.metric-chip {
+  background: white;
+  border: 1px solid #d9e7ef;
+  border-radius: 16px;
+  padding: 0.9rem 1.1rem;
+  min-width: 180px;
+  box-shadow: 0 8px 20px rgba(17, 138, 178, 0.08);
+}
+
+.metric-title {
+  display: block;
+  font-size: 0.85rem;
+  color: #5b7487;
+}
+
+.section-block {
+  padding: 4.5rem 0;
+}
+
+.alt-bg {
+  background: #eef5f8;
+}
+
+.section-header {
+  margin-bottom: 1.8rem;
+}
+
+.section-header h2 {
+  font-weight: 800;
+  margin-bottom: 0.4rem;
+}
+
+.section-header p {
+  color: #526372;
+  margin-bottom: 0;
+}
+
+.gallery-img {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid #d8e5ed;
+  box-shadow: 0 10px 24px rgba(12, 51, 77, 0.08);
+  background: white;
+}
+
+.summary-box {
+  background: #f8fbfd;
+  border: 1px solid #d8e5ed;
+  border-radius: 16px;
+  padding: 1rem 1.1rem;
+  min-height: 210px;
+}
+
+.gemini-box {
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+
+.molecule-placeholder {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  border: 1px dashed #b8cddb;
+  border-radius: 16px;
+  background: #f8fbfd;
+  color: #5b7487;
+  font-size: 0.95rem;
+}
+
+.code-block {
+  background: #0f172a;
+  color: #e5f2ff;
+  border-radius: 16px;
+  padding: 1rem;
+  font-size: 0.88rem;
+  overflow-x: auto;
+}
+
+code {
+  color: #0b7285;
+}
+
+.table td, .table th {
+  vertical-align: middle;
+}
