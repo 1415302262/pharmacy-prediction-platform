@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN" xml:lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>面向非本领域读者的完整项目报告：可解释药物脂溶性预测平台</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      word-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">面向非本领域读者的完整项目报告：可解释药物脂溶性预测平台</h1>
+</header>
+<h1 id="面向非本领域读者的完整项目报告可解释药物脂溶性预测平台">面向非本领域读者的完整项目报告：可解释药物脂溶性预测平台</h1>
+<blockquote>
+<p>版本：2026-03-15<br />
+项目目录：<code>/public/home/zhw/cptac/projects/experiment/qsar_project</code><br />
+适用对象：药学研究生复试、跨学科答辩、GitHub 项目介绍、Hugging Face 平台说明<br />
+读者假设：默认读者不同时具备药学、化学信息学和机器学习背景，因此本报告会先解释“为什么要做”，再解释“怎么做”，最后解释“结果意味着什么”。</p>
+</blockquote>
+<hr />
+<h2 id="一先用一句话讲清楚这个项目">一、先用一句话讲清楚这个项目</h2>
+<p>这个项目做的事情是：</p>
+<p><strong>根据一个分子的结构（SMILES），用真实公开数据训练得到的模型去预测它的脂溶性，并进一步用可解释性方法说明模型为什么这么判断，最后把结果做成可以直接访问的网页和 API。</strong></p>
+<p>如果再口语一点，可以把它理解成：</p>
+<blockquote>
+<p>这是一个“药物分子实验前预筛选助手”。</p>
+</blockquote>
+<p>你给它一个分子的结构，它先告诉你这个分子大概更偏亲水还是疏水，然后再告诉你：模型主要是根据哪些结构或理化特征做出这个判断的。这样，药化人员可以更有依据地决定：</p>
+<ul>
+<li>这个分子值不值得继续做实验；</li>
+<li>如果想把它改得更亲水或更疏水，结构上可能往哪个方向修改更合理。</li>
+</ul>
+<hr />
+<h2 id="二这个项目为什么重要">二、这个项目为什么重要</h2>
+<h3 id="药学背景为什么要关注脂溶性">2.1 药学背景：为什么要关注脂溶性</h3>
+<p>脂溶性（lipophilicity，常见表征是 logD 或 logP）是药物研发中非常关键的性质。它会影响：</p>
+<ul>
+<li><strong>吸收（Absorption）</strong>：分子能不能比较容易通过生物膜；</li>
+<li><strong>分布（Distribution）</strong>：进入体内后更容易停留在血液、水相环境，还是进入脂质丰富的组织；</li>
+<li><strong>膜通透性（Membrane permeability）</strong>：对口服药、脑靶向药等都很关键；</li>
+<li><strong>成药性（Drug-likeness）</strong>：太亲水或太疏水都可能带来问题。</li>
+</ul>
+<p>可以粗略理解为：</p>
+<ul>
+<li><strong>脂溶性太低</strong>：分子可能不容易穿膜，吸收差；</li>
+<li><strong>脂溶性太高</strong>：分子虽然更容易穿膜，但可能溶解性差、非特异性结合增多、体内暴露不可控。</li>
+</ul>
+<p>所以在药物设计里，脂溶性经常不是“越高越好”或“越低越好”，而是<strong>要平衡</strong>。</p>
+<h3 id="现实痛点实验可靠但代价高">2.2 现实痛点：实验可靠，但代价高</h3>
+<p>当然，最可靠的办法始终是做实验测量。但实验存在几个现实问题：</p>
+<ul>
+<li>成本高；</li>
+<li>周期长；</li>
+<li>不能对大量候选分子都优先做完实验再决策。</li>
+</ul>
+<p>因此，一个很自然的问题是：</p>
+<blockquote>
+<p>能不能在实验之前，先用计算方法做一次“预筛选”？</p>
+</blockquote>
+<p>这就是本项目的切入点。</p>
+<hr />
+<h2 id="三这个项目到底解决了什么问题">三、这个项目到底解决了什么问题</h2>
+<p>项目的目标不是做一个“花哨的模型”，而是解决一个<strong>真实的研发决策问题</strong>：</p>
+<blockquote>
+<p>对一个新分子，在还没做实验之前，我们能不能基于结构大致判断它的脂溶性，并给出可解释的结构层面提示？</p>
+</blockquote>
+<p>因此，这个项目有三个层次的目标：</p>
+<ol type="1">
+<li><strong>预测层</strong>：模型能不能把脂溶性预测得比较准；</li>
+<li><strong>验证层</strong>：模型是不是只在随机划分里看起来很厉害，还是在更严格设定下依然稳；</li>
+<li><strong>解释层</strong>：模型能不能告诉我们“为什么这么判断”，而不是只给一个数。</li>
+</ol>
+<p>再往前走一步，我们还把它做成了一个小型平台，所以还有第四层目标：</p>
+<ol start="4" type="1">
+<li><strong>平台层</strong>：别人能不能不看代码、直接打开网页体验这个项目。</li>
+</ol>
+<hr />
+<h2 id="四项目的完整工作流从头到尾">四、项目的完整工作流（从头到尾）</h2>
+<p>这个项目可以分成 9 个步骤：</p>
+<ol type="1">
+<li>明确研究问题<br />
+</li>
+<li>获取真实公开数据<br />
+</li>
+<li>清洗与标准化分子结构<br />
+</li>
+<li>构建多种分子特征<br />
+</li>
+<li>训练基线模型与增强模型<br />
+</li>
+<li>比较模型性能<br />
+</li>
+<li>做更严格的 scaffold 验证<br />
+</li>
+<li>做 SHAP 可解释性分析<br />
+</li>
+<li>做成网页平台与 API</li>
+</ol>
+<p>下面逐步解释。</p>
+<hr />
+<h2 id="五数据从哪里来为什么可信">五、数据从哪里来，为什么可信</h2>
+<h3 id="数据来源">5.1 数据来源</h3>
+<p>本项目使用的是公开 <code>Lipophilicity</code> 数据集，来自 MoleculeNet / DeepChem 体系，对应真实药物样分子的实验脂溶性记录。</p>
+<p>项目中已经整理的数据概况：</p>
+<ul>
+<li>数据集规模：<code>4200</code> 个分子</li>
+<li>目标变量：实验脂溶性（logD）</li>
+<li>数据来源特征：包含 <code>ChEMBL</code> 编号</li>
+<li>项目内摘要文件：<code>results/dataset_summary.json</code></li>
+</ul>
+<h3 id="为什么这点重要">5.2 为什么这点重要</h3>
+<p>这意味着：</p>
+<ul>
+<li>不是自己随手构造的模拟数据；</li>
+<li>不是为了“做高分”专门拼凑的数据；</li>
+<li>数据背后有公开数据库来源，可以追溯。</li>
+</ul>
+<p>对于药学复试来说，这一点非常关键。因为老师往往不只关心你“会不会调模型”，还关心你：</p>
+<ul>
+<li>会不会处理真实科研数据；</li>
+<li>知不知道公开数据库的重要性；</li>
+<li>有没有可复现意识。</li>
+</ul>
+<h3 id="数据清洗做了什么">5.3 数据清洗做了什么</h3>
+<p>项目先对原始数据做了这些处理：</p>
+<ul>
+<li>校验 <code>SMILES</code> 是否能被 RDKit 正确解析；</li>
+<li>统一成标准化结构表示；</li>
+<li>去掉无效或重复结构；</li>
+<li>保留可用于建模的真实标签。</li>
+</ul>
+<p>可以理解为：</p>
+<blockquote>
+<p>在开始训练模型之前，先把“分子结构数据”变成干净、统一、可计算的输入。</p>
+</blockquote>
+<hr />
+<h2 id="六怎么把分子变成机器能理解的数字">六、怎么把分子变成机器能理解的数字</h2>
+<p>一个分子的 <code>SMILES</code> 是字符串，不能直接喂给机器学习模型。<br />
+所以我们必须把分子结构转成数字特征。这个过程叫 <strong>特征工程</strong>。</p>
+<p>本项目使用了三类特征。</p>
+<h3 id="基础理化描述符">6.1 基础理化描述符</h3>
+<p>这类特征偏“药学常识”，代表分子的整体性质，例如：</p>
+<ul>
+<li><code>MolWt</code>：分子量</li>
+<li><code>MolLogP</code>：疏水性/脂溶性相关指标</li>
+<li><code>TPSA</code>：拓扑极性表面积</li>
+<li><code>HBD/HBA</code>：氢键供体/受体数</li>
+<li><code>RingCount</code>：环数</li>
+<li><code>QED</code>：类药性评分</li>
+</ul>
+<p>这类特征好处是：</p>
+<ul>
+<li>容易解释；</li>
+<li>和药学语言直接对应；</li>
+<li>很适合答辩时讲清楚模型在学什么。</li>
+</ul>
+<h3 id="rdkit-全量-2d-描述符">6.2 RDKit 全量 2D 描述符</h3>
+<p>除了基础描述符之外，项目进一步计算了更全面的 2D 描述符，然后在训练集内做筛选：</p>
+<ul>
+<li>去掉缺失列；</li>
+<li>去掉零方差列；</li>
+<li>去掉高度相关列。</li>
+</ul>
+<p>最后保留了 <strong>173 个有效描述符</strong>。</p>
+<p>这一步的意义是：</p>
+<ul>
+<li>让模型看到更多结构相关信息；</li>
+<li>但又避免无效特征和冗余特征拖累模型。</li>
+</ul>
+<h3 id="分子指纹morgan-maccs">6.3 分子指纹：Morgan + MACCS</h3>
+<p>这类特征更像“结构片段编码”。</p>
+<ul>
+<li><strong>Morgan Fingerprint</strong>：描述分子局部原子环境和子结构模式；</li>
+<li><strong>MACCS Keys</strong>：描述常见结构键和化学片段是否存在。</li>
+</ul>
+<p>可以把它们粗略理解成：</p>
+<blockquote>
+<p>描述符更像“分子的整体体检报告”，<br />
+指纹更像“分子有哪些局部结构片段的编码表”。</p>
+</blockquote>
+<h3 id="为什么要多种特征一起用">6.4 为什么要多种特征一起用</h3>
+<p>因为脂溶性这个性质不是由单一因素决定的。</p>
+<p>它既和：</p>
+<ul>
+<li>分子整体大小、极性、氢键能力</li>
+</ul>
+<p>有关，也和：</p>
+<ul>
+<li>某些具体结构片段、官能团、骨架模式</li>
+</ul>
+<p>有关。</p>
+<p>所以本项目选择：</p>
+<blockquote>
+<p><strong>基础描述符 + 扩展描述符 + 结构指纹</strong></p>
+</blockquote>
+<p>来共同表达分子。</p>
+<hr />
+<h2 id="七模型是怎么一步步升级的">七、模型是怎么一步步升级的</h2>
+<h3 id="先做基线模型">7.1 先做基线模型</h3>
+<p>我们没有一上来就堆复杂方法，而是先做了几类基线模型：</p>
+<ul>
+<li>随机森林（Random Forest）</li>
+<li>支持向量回归（SVR）</li>
+<li>基线版 XGBoost</li>
+</ul>
+<p>这样做的好处是：</p>
+<ul>
+<li>先知道一个合理起点；</li>
+<li>后续每次升级都能比较“到底有没有真正进步”。</li>
+</ul>
+<h3 id="做增强模型">7.2 做增强模型</h3>
+<p>在增强版里，项目引入了：</p>
+<ul>
+<li>增强特征输入（描述符 + Morgan + MACCS）</li>
+<li>XGBoost（增强版）</li>
+<li>CatBoost</li>
+<li>PyTorch MLP</li>
+<li>加权集成（Weighted Ensemble）</li>
+</ul>
+<p>这里的思路不是“哪个模型最炫就用哪个”，而是：</p>
+<ul>
+<li>树模型（XGBoost / CatBoost）对结构化特征很强；</li>
+<li>MLP 可以学习高维连续特征的复杂组合；</li>
+<li>三者的错误模式并不完全一样；</li>
+<li>所以做集成往往能更稳。</li>
+</ul>
+<h3 id="为什么集成模型是最终最优解">7.3 为什么集成模型是最终最优解</h3>
+<p>最终最佳模型是：</p>
+<ul>
+<li><code>Weighted_Ensemble_rich</code></li>
+</ul>
+<p>它本质上不是重新训练了一个更复杂的“大一统模型”，而是：</p>
+<ul>
+<li>把 XGBoost、CatBoost、MLP 的输出按验证集上优化得到的权重做组合。</li>
+</ul>
+<p>也就是说：</p>
+<blockquote>
+<p>我们不是盲目追求“单个模型必须赢”，而是利用不同模型之间的互补性。</p>
+</blockquote>
+<p>这是一种很典型、也很成熟的工程与科研思路。</p>
+<hr />
+<h2 id="八模型到底表现怎么样">八、模型到底表现怎么样</h2>
+<h3 id="普通测试集结果">8.1 普通测试集结果</h3>
+<p>增强版最终结果如下（来自 <code>results/final_results_v2.md</code>）：</p>
+<table>
+<thead>
+<tr class="header">
+<th>模型</th>
+<th style="text-align: right;">R²</th>
+<th style="text-align: right;">RMSE</th>
+<th style="text-align: right;">MAE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Weighted_Ensemble_rich</td>
+<td style="text-align: right;">0.7232</td>
+<td style="text-align: right;">0.6346</td>
+<td style="text-align: right;">0.4517</td>
+</tr>
+<tr class="even">
+<td>XGB_rich_desc_fp_maccs</td>
+<td style="text-align: right;">0.7043</td>
+<td style="text-align: right;">0.6559</td>
+<td style="text-align: right;">0.4810</td>
+</tr>
+<tr class="odd">
+<td>CatBoost_rich_desc_fp_maccs</td>
+<td style="text-align: right;">0.6973</td>
+<td style="text-align: right;">0.6637</td>
+<td style="text-align: right;">0.4862</td>
+</tr>
+<tr class="even">
+<td>PyTorch_MLP_rich_desc_fp_maccs</td>
+<td style="text-align: right;">0.6967</td>
+<td style="text-align: right;">0.6643</td>
+<td style="text-align: right;">0.4634</td>
+</tr>
+<tr class="odd">
+<td>XGB_baseline_desc_fp</td>
+<td style="text-align: right;">0.6835</td>
+<td style="text-align: right;">0.6787</td>
+<td style="text-align: right;">0.5075</td>
+</tr>
+</tbody>
+</table>
+<h3 id="这些数字怎么理解">8.2 这些数字怎么理解</h3>
+<ul>
+<li><strong>R² 越高越好</strong>：表示模型对真实变化的解释能力更强；</li>
+<li><strong>RMSE 越低越好</strong>：表示预测误差更小；</li>
+<li><strong>MAE 越低越好</strong>：表示平均绝对偏差更小。</li>
+</ul>
+<p>从结果上看：</p>
+<ul>
+<li>增强版模型整体优于基线；</li>
+<li>集成模型最好；</li>
+<li>深度学习模型单独也很强，但最终集成更稳。</li>
+</ul>
+<h3 id="相比上一版提升了什么">8.3 相比上一版提升了什么</h3>
+<p>上一版最佳是：</p>
+<ul>
+<li><code>XGB_desc_fp</code></li>
+<li>Test <code>R² = 0.6835</code></li>
+<li>Test <code>RMSE = 0.6787</code></li>
+</ul>
+<p>增强版最佳是：</p>
+<ul>
+<li><code>Weighted_Ensemble_rich</code></li>
+<li>Test <code>R² = 0.7232</code></li>
+<li>Test <code>RMSE = 0.6346</code></li>
+</ul>
+<p>也就是：</p>
+<ul>
+<li><code>R²</code> 提升了 <code>0.0397</code></li>
+<li><code>RMSE</code> 降低了 <code>0.0440</code></li>
+</ul>
+<p>这说明增强并不是“做了很多事但没效果”，而是带来了明确收益。</p>
+<hr />
+<h2 id="九为什么还要做更严格的验证">九、为什么还要做更严格的验证</h2>
+<p>如果只做普通随机划分，老师可能会问：</p>
+<blockquote>
+<p>这些分子是不是在训练集和测试集里其实很像，所以模型看起来很厉害？</p>
+</blockquote>
+<p>这个问题非常关键。因为在真实药物研发里，模型常常面对的是：</p>
+<ul>
+<li>一个<strong>新骨架（new scaffold）</strong>的分子，</li>
+<li>而不是和训练集高度相似的分子。</li>
+</ul>
+<h3 id="什么是-scaffold-split">9.1 什么是 scaffold split</h3>
+<p>scaffold 可以理解为分子的“骨架框架”。<br />
+如果训练集和测试集共享大量相似骨架，那么模型在测试集上的表现可能会偏乐观。</p>
+<p>所以项目进一步加入了：</p>
+<ul>
+<li><strong>5 次 repeated scaffold split</strong></li>
+</ul>
+<p>也就是说：</p>
+<ul>
+<li>让训练集和测试集尽量在骨架层面分开；</li>
+<li>重复多次，计算平均值和标准差；</li>
+<li>看模型是否稳定，而不是只看一次运气。</li>
+</ul>
+<h3 id="严格验证结果">9.2 严格验证结果</h3>
+<p>来自 <code>results/scaffold_validation_results.md</code>：</p>
+<table>
+<thead>
+<tr class="header">
+<th>模型</th>
+<th style="text-align: right;">R² mean ± std</th>
+<th style="text-align: right;">RMSE mean ± std</th>
+<th style="text-align: right;">MAE mean ± std</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Weighted_Ensemble_scaffold</td>
+<td style="text-align: right;">0.7138 ± 0.0215</td>
+<td style="text-align: right;">0.6489 ± 0.0296</td>
+<td style="text-align: right;">0.4962 ± 0.0226</td>
+</tr>
+<tr class="even">
+<td>PyTorch_MLP_rich_scaffold</td>
+<td style="text-align: right;">0.6945 ± 0.0261</td>
+<td style="text-align: right;">0.6698 ± 0.0200</td>
+<td style="text-align: right;">0.5111 ± 0.0187</td>
+</tr>
+<tr class="odd">
+<td>XGB_rich_scaffold</td>
+<td style="text-align: right;">0.6847 ± 0.0234</td>
+<td style="text-align: right;">0.6811 ± 0.0347</td>
+<td style="text-align: right;">0.5241 ± 0.0252</td>
+</tr>
+<tr class="even">
+<td>CatBoost_rich_scaffold</td>
+<td style="text-align: right;">0.6750 ± 0.0234</td>
+<td style="text-align: right;">0.6914 ± 0.0295</td>
+<td style="text-align: right;">0.5313 ± 0.0201</td>
+</tr>
+<tr class="odd">
+<td>XGB_baseline_scaffold</td>
+<td style="text-align: right;">0.6472 ± 0.0311</td>
+<td style="text-align: right;">0.7200 ± 0.0299</td>
+<td style="text-align: right;">0.5519 ± 0.0234</td>
+</tr>
+</tbody>
+</table>
+<h3 id="为什么这组结果很重要">9.3 为什么这组结果很重要</h3>
+<p>这组结果通常会比随机划分更低，这是<strong>正常的</strong>。因为验证变严格了。</p>
+<p>真正重要的是：</p>
+<ul>
+<li>增强版在严格 scaffold 设定下依然明显优于基线；</li>
+<li>集成模型依然是最优；</li>
+<li>标准差不大，说明重复实验比较稳定。</li>
+</ul>
+<p>这会让老师觉得你不是只会“做一个漂亮分数”，而是知道：</p>
+<blockquote>
+<p><strong>科研里要证明模型真的能泛化。</strong></p>
+</blockquote>
+<hr />
+<h2 id="十shap-和-xai-到底证明了什么">十、SHAP 和 XAI 到底证明了什么</h2>
+<p>很多模型预测项目只停留在：</p>
+<ul>
+<li>输入分子</li>
+<li>输出一个数字</li>
+</ul>
+<p>但这在答辩里很容易被追问：</p>
+<ul>
+<li>模型为什么这么判断？</li>
+<li>你怎么证明它学到的是有意义的东西？</li>
+<li>这个结果对药化修改有什么指导价值？</li>
+</ul>
+<p>所以项目加了 <strong>SHAP（SHapley Additive exPlanations）</strong>，这就是一类典型的 <strong>XAI（可解释人工智能）</strong> 方法。</p>
+<h3 id="shap-的两个层面">10.1 SHAP 的两个层面</h3>
+<h4 id="全局解释">全局解释</h4>
+<p>说明整个模型最重视哪些特征。</p>
+<p>项目中排名靠前的特征包括：</p>
+<ul>
+<li><code>MolLogP</code></li>
+<li><code>fr_COO</code></li>
+<li><code>VSA_EState5</code></li>
+<li><code>MACCS_104</code></li>
+<li><code>SMR_VSA10</code></li>
+</ul>
+<p>这很有意义，因为：</p>
+<ul>
+<li><code>MolLogP</code> 和脂溶性本身高度相关；</li>
+<li>酸性基团、极性表面积等也会影响分子在水相/脂相中的分配行为；</li>
+<li>说明模型并不是在抓毫无意义的噪声。</li>
+</ul>
+<h4 id="局部解释">局部解释</h4>
+<p>说明对<strong>某一个具体分子</strong>，哪些特征在把预测值往上推，哪些在往下拉。</p>
+<p>项目还专门挑了 3 个案例：</p>
+<ul>
+<li><code>HighPrediction</code></li>
+<li><code>LowPrediction</code></li>
+<li><code>LargeError</code></li>
+</ul>
+<p>这样就能回答：</p>
+<blockquote>
+<p>为什么这个分子会被预测成高脂溶性？<br />
+为什么另一个分子会被预测成低脂溶性？<br />
+为什么有的分子模型会判断失误？</p>
+</blockquote>
+<h3 id="shap-对答辩的价值">10.2 SHAP 对答辩的价值</h3>
+<p>SHAP 不能证明因果，但它能证明：</p>
+<ul>
+<li>模型判断有迹可循；</li>
+<li>重要特征与药学常识相符；</li>
+<li>对单个分子可以给出“结构方向上的解释提示”。</li>
+</ul>
+<p>你可以把它理解成：</p>
+<blockquote>
+<p>SHAP 让这个项目从“黑盒预测器”升级成“可解释的药化辅助工具”。</p>
+</blockquote>
+<hr />
+<h2 id="十一这个项目做成平台意味着什么">十一、这个项目做成平台意味着什么</h2>
+<p>很多课程项目只到“代码能跑”和“图画出来”为止。<br />
+但这个项目进一步做成了：</p>
+<ul>
+<li>网页前端</li>
+<li>JSON API</li>
+<li>Hugging Face Space 可部署演示平台</li>
+</ul>
+<h3 id="平台可以干什么">11.1 平台可以干什么</h3>
+<p>用户可以：</p>
+<ul>
+<li>输入一个新的 <code>SMILES</code></li>
+<li>得到脂溶性预测值</li>
+<li>看到结构图</li>
+<li>看到正向和负向 SHAP 特征</li>
+<li>查看项目核心结果图</li>
+<li>查看严格验证结果</li>
+<li>通过 API 调用预测接口</li>
+</ul>
+<h3 id="这为什么重要">11.2 这为什么重要</h3>
+<p>因为这说明你不仅会：</p>
+<ul>
+<li>训练模型</li>
+<li>解释模型</li>
+</ul>
+<p>你还会：</p>
+<ul>
+<li>把模型包装成别人可以直接使用的工具</li>
+<li>考虑部署与调用方式</li>
+<li>考虑作品展示和工程落地</li>
+</ul>
+<p>对计算机老师来说，这体现工程能力。<br />
+对药学老师来说，这意味着项目更接近“真的能用”的科研工具。</p>
+<hr />
+<h2 id="十二gemini-在这个项目里扮演什么角色">十二、Gemini 在这个项目里扮演什么角色</h2>
+<p>Gemini 不是这个项目的<strong>核心预测模型</strong>，而是一个<strong>辅助解释层</strong>。</p>
+<p>它的作用不是替代现有模型，而是把已有结果翻译得更适合人读。</p>
+<h3 id="核心模型和-gemini-的分工">12.1 核心模型和 Gemini 的分工</h3>
+<ul>
+<li><strong>核心模型</strong>负责：
+<ul>
+<li>真实预测脂溶性</li>
+<li>产生数值结果</li>
+<li>产生 SHAP 特征贡献</li>
+</ul></li>
+<li><strong>Gemini</strong>负责：
+<ul>
+<li>把这些结果转换成更自然的中文说明</li>
+<li>生成药化优化建议</li>
+<li>输出适合答辩、展示或报告的语言版本</li>
+</ul></li>
+</ul>
+<h3 id="为什么这样设计是合理的">12.2 为什么这样设计是合理的</h3>
+<p>因为如果让 Gemini 直接“猜脂溶性”，那就失去了严格建模和可验证性。<br />
+而现在的做法是：</p>
+<blockquote>
+<p>先用真实训练得到的模型做预测，<br />
+再用 Gemini 做语言层的辅助解释。</p>
+</blockquote>
+<p>这样既保留了科研严谨性，又增强了可读性和展示性。</p>
+<hr />
+<h2 id="十三项目最终交付了哪些东西">十三、项目最终交付了哪些东西</h2>
+<p>这个项目最终不是一个单文件脚本，而是一整套成果。</p>
+<h3 id="模型与结果">13.1 模型与结果</h3>
+<ul>
+<li>增强版模型文件</li>
+<li>测试集结果表</li>
+<li>scaffold 验证结果表</li>
+<li>SHAP 结果表</li>
+</ul>
+<h3 id="图表">13.2 图表</h3>
+<p>包括但不限于：</p>
+<ul>
+<li>基线与增强版性能对比图</li>
+<li>严格验证结果图</li>
+<li>SHAP 全局重要特征图</li>
+<li>SHAP 分子案例图</li>
+<li>化学空间图</li>
+<li>scaffold 图</li>
+</ul>
+<h3 id="文档">13.3 文档</h3>
+<ul>
+<li>项目说明</li>
+<li>快速开始文档</li>
+<li>报告</li>
+<li>工作留痕</li>
+</ul>
+<h3 id="平台">13.4 平台</h3>
+<ul>
+<li>Flask 网页</li>
+<li>API 接口</li>
+<li>Hugging Face Space 部署包</li>
+</ul>
+<p>这意味着它已经具备：</p>
+<ul>
+<li><strong>研究性</strong></li>
+<li><strong>工程性</strong></li>
+<li><strong>解释性</strong></li>
+<li><strong>展示性</strong></li>
+</ul>
+<hr />
+<h2 id="十四如果完全不懂这个领域怎么最快理解这个项目">十四、如果完全不懂这个领域，怎么最快理解这个项目</h2>
+<p>你可以这样理解：</p>
+<h3 id="从药学角度看">从药学角度看</h3>
+<p>这是一个帮药物研发做前期判断的小工具。<br />
+它根据分子结构估计脂溶性，从而帮助判断这个分子是不是值得继续推进。</p>
+<h3 id="从计算机角度看">从计算机角度看</h3>
+<p>这是一个真实数据驱动的、带严格验证和可解释性的分子性质预测系统。<br />
+它包含了：</p>
+<ul>
+<li>特征工程</li>
+<li>传统机器学习</li>
+<li>深度学习</li>
+<li>集成学习</li>
+<li>严格验证</li>
+<li>XAI</li>
+<li>平台部署</li>
+</ul>
+<h3 id="从产品角度看">从产品角度看</h3>
+<p>这是一个可以输入分子、得到预测结果和解释，并能通过 API 被其他系统调用的在线工具。</p>
+<hr />
+<h2 id="十五这份项目为什么经得住拷问">十五、这份项目为什么“经得住拷问”</h2>
+<p>答辩里通常会遇到这些问题，而这个项目都能回答。</p>
+<h3 id="你为什么选这个问题">15.1 “你为什么选这个问题？”</h3>
+<p>因为脂溶性是药物研发中的关键性质，和吸收、分布、膜通透性直接相关，药学意义明确。</p>
+<h3 id="你为什么选这个数据集">15.2 “你为什么选这个数据集？”</h3>
+<p>因为它是真实公开数据，不是模拟数据，有清晰来源，适合复现和对外展示。</p>
+<h3 id="为什么不用一个模型就结束">15.3 “为什么不用一个模型就结束？”</h3>
+<p>因为不同模型对同一问题的优势不同，做比较和集成可以更稳、更有说服力。</p>
+<h3 id="你怎么证明不是碰巧有效">15.4 “你怎么证明不是碰巧有效？”</h3>
+<p>因为做了：</p>
+<ul>
+<li>基线比较</li>
+<li>增强版比较</li>
+<li>repeated scaffold split 严格验证</li>
+</ul>
+<h3 id="你怎么证明模型不是黑盒">15.5 “你怎么证明模型不是黑盒？”</h3>
+<p>因为加入了 SHAP：</p>
+<ul>
+<li>有全局特征重要性</li>
+<li>有单分子局部解释</li>
+<li>能把预测与具体结构信息联系起来</li>
+</ul>
+<h3 id="gemini-是不是替代了模型">15.6 “Gemini 是不是替代了模型？”</h3>
+<p>不是。Gemini 只做辅助解释，不做核心数值预测。</p>
+<h3 id="为什么不直接做-gnn">15.7 “为什么不直接做 GNN？”</h3>
+<p>不是不能做，而是当前这套方案已经在真实数据上取得稳定且可解释的结果，并且更容易复现、部署和展示。对于复试来说，这样更稳。</p>
+<hr />
+<h2 id="十六项目目前的边界和不足">十六、项目目前的边界和不足</h2>
+<p>经得住拷问的项目，不是说“没有缺点”，而是说：</p>
+<blockquote>
+<p>你知道自己的边界在哪里。</p>
+</blockquote>
+<p>本项目目前还有这些局限：</p>
+<ol type="1">
+<li>主要任务仍然是单一性质预测；</li>
+<li>虽然做了严格 scaffold 验证，但还没有外部独立测试集；</li>
+<li>SHAP 给的是模型解释，不是因果生物机制；</li>
+<li>Gemini 是辅助层，不应被当作核心科学结论来源。</li>
+</ol>
+<p>这些局限并不减分，反而会让你的答辩显得成熟。</p>
+<hr />
+<h2 id="十七后续还能怎么继续升级">十七、后续还能怎么继续升级</h2>
+<p>如果后续还要继续增强，这几个方向最有价值：</p>
+<ul>
+<li>外部独立测试集验证</li>
+<li>更严格的 scaffold / time split</li>
+<li>图神经网络（GNN）</li>
+<li>多任务性质联合预测</li>
+<li>用 SHAP 进一步做“可操作的分子改造建议表”</li>
+<li>Gemini 辅助解释做成多模式输出（药化模式、答辩模式、英文摘要模式）</li>
+</ul>
+<hr />
+<h2 id="十八最后的总总结">十八、最后的总总结</h2>
+<p>这个项目最终形成的是一个完整的跨学科作品，而不是单一模型实验。</p>
+<p>它把下面几件事串起来了：</p>
+<ul>
+<li>真实公开数据</li>
+<li>分子结构特征工程</li>
+<li>基线模型与增强模型比较</li>
+<li>集成学习</li>
+<li>scaffold 严格验证</li>
+<li>SHAP 可解释性</li>
+<li>网页平台与 API</li>
+<li>Gemini 辅助解释层</li>
+</ul>
+<p>如果要用一句最适合答辩的话来总结它，可以说：</p>
+<blockquote>
+<p>这是一个从真实公开数据出发、经过结构增强建模、严格验证和可解释性分析，最终做成在线平台的可解释药物脂溶性预测项目。它不仅能预测一个分子的脂溶性，还能解释为什么这么判断，并把结果进一步转化成适合药学理解和展示的结构优化提示。</p>
+</blockquote>
+<hr />
+<h2 id="附录-a项目中最重要的结果数字">附录 A：项目中最重要的结果数字</h2>
+<h3 id="随机划分最佳结果">随机划分最佳结果</h3>
+<ul>
+<li>最佳模型：<code>Weighted_Ensemble_rich</code></li>
+<li><code>R² = 0.7232</code></li>
+<li><code>RMSE = 0.6346</code></li>
+<li><code>MAE = 0.4517</code></li>
+</ul>
+<h3 id="严格验证最佳结果">严格验证最佳结果</h3>
+<ul>
+<li>最佳模型：<code>Weighted_Ensemble_scaffold</code></li>
+<li><code>R² = 0.7138 ± 0.0215</code></li>
+<li><code>RMSE = 0.6489 ± 0.0296</code></li>
+<li><code>MAE = 0.4962 ± 0.0226</code></li>
+</ul>
+<h3 id="shap-最重要特征前-5">SHAP 最重要特征（前 5）</h3>
+<ol type="1">
+<li><code>MolLogP</code></li>
+<li><code>fr_COO</code></li>
+<li><code>VSA_EState5</code></li>
+<li><code>MACCS_104</code></li>
+<li><code>SMR_VSA10</code></li>
+</ol>
+<hr />
+<h2 id="附录-b建议优先展示的图片">附录 B：建议优先展示的图片</h2>
+<p>如果需要做 PPT 或 GitHub 首页，最推荐优先展示这几张：</p>
+<ol type="1">
+<li><code>../figures/14_baseline_vs_enhanced.png</code></li>
+<li><code>../figures/16_scaffold_repeat_summary.png</code></li>
+<li><code>../figures/19_shap_top20_bar.png</code></li>
+<li><code>../figures/22_shap_case_molecules.png</code></li>
+</ol>
+<p>下面是对应示意：</p>
+<h3 id="图1增强前后效果对比">图1：增强前后效果对比</h3>
+<p><img src="../figures/14_baseline_vs_enhanced.png" /></p>
+<h3 id="图2严格-scaffold-验证结果">图2：严格 scaffold 验证结果</h3>
+<p><img src="../figures/16_scaffold_repeat_summary.png" /></p>
+<h3 id="图3shap-全局重要特征">图3：SHAP 全局重要特征</h3>
+<p><img src="../figures/19_shap_top20_bar.png" /></p>
+<h3 id="图4局部解释代表分子">图4：局部解释代表分子</h3>
+<p><img src="../figures/22_shap_case_molecules.png" /></p>
+<hr />
+<h2 id="附录-c建议老师追问时的标准回答模板">附录 C：建议老师追问时的标准回答模板</h2>
+<h3 id="问这个项目最重要的创新点是什么">问：这个项目最重要的创新点是什么？</h3>
+<p>答：不是单纯追求一个更高的分数，而是把真实公开数据、结构增强建模、严格验证、SHAP 解释和在线平台结合起来，使它既有科研严谨性，也有展示和应用价值。</p>
+<h3 id="问为什么你说它可解释">问：为什么你说它“可解释”？</h3>
+<p>答：因为不仅有全局重要特征，还有对单个分子的局部 SHAP 解释，可以知道哪些特征在把预测往上推、哪些在往下拉。</p>
+<h3 id="问gemini-在这里是不是替代分析">问：Gemini 在这里是不是“替代分析”？</h3>
+<p>答：不是。Gemini 不负责做核心预测，只负责把已经得到的模型结果翻译成更自然的药学和项目说明，所以它是解释层，不是核心科学结论来源。</p>
+<h3 id="问为什么平台化也重要">问：为什么平台化也重要？</h3>
+<p>答：因为平台化说明这个项目不是停留在离线脚本层面，而是已经具备“别人可以直接访问和调用”的工具属性，这对计算机和交叉项目尤其重要。</p>
+</body>
+</html>

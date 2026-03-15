@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Drug Lipophilicity QSAR XAI Demo</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+      <div class="container">
+        <span class="navbar-brand fw-bold">Drug Lipophilicity QSAR XAI Demo</span>
+        <div class="navbar-nav ms-auto d-flex flex-row gap-3">
+          <a class="nav-link text-white" href="#predictor">预测</a>
+          <a class="nav-link text-white" href="#results">结果</a>
+          <a class="nav-link text-white" href="#validation">验证</a>
+          <a class="nav-link text-white" href="#xai">解释</a>
+          <a class="nav-link text-white" href="#api">API</a>
+        </div>
+      </div>
+    </nav>
+
+    <header class="hero-section py-5">
+      <div class="container">
+        <div class="row align-items-center gy-4">
+          <div class="col-lg-7">
+            <p class="eyebrow mb-2">真实公开数据 · 结构增强建模 · 严格验证 · SHAP解释</p>
+            <h1 class="display-5 fw-bold mb-3">可解释药物脂溶性预测平台</h1>
+            <p class="lead text-secondary mb-4">
+              基于真实公开的 Lipophilicity 数据集，整合 RDKit 描述符、Morgan 指纹、MACCS 结构键，
+              使用 XGBoost、CatBoost、PyTorch MLP 和加权集成实现单分子预测、严格验证与模型解释。
+            </p>
+            <div class="d-flex flex-wrap gap-3">
+              <div class="metric-chip">
+                <span class="metric-title">随机划分最佳</span>
+                <strong>R² {{ '%.4f'|format(best_random['r2']) }}</strong>
+              </div>
+              <div class="metric-chip">
+                <span class="metric-title">随机划分 RMSE</span>
+                <strong>{{ '%.4f'|format(best_random['rmse']) }}</strong>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <img class="img-fluid rounded-4 shadow-sm" src="{{ url_for('project_files', subpath='figures/14_baseline_vs_enhanced.png') }}" alt="baseline_vs_enhanced" />
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section id="predictor" class="section-block">
+        <div class="container">
+          <div class="section-header">
+            <h2>单分子预测</h2>
+            <p>输入一个 SMILES，返回集成模型预测值、结构图和局部解释提示。</p>
+          </div>
+          <div class="row g-4">
+            <div class="col-lg-5">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-body p-4">
+                  <label for="smilesInput" class="form-label fw-semibold">输入 SMILES</label>
+                  <textarea class="form-control mb-3" id="smilesInput" rows="4">Cn1c(CN2CCN(CC2)c3ccc(Cl)cc3)nc4ccccc14</textarea>
+                  <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-primary" id="predictBtn">预测并解释</button>
+                    <button class="btn btn-dark" id="geminiBtn">Gemini 深度解读</button>
+                    <button class="btn btn-outline-secondary example-btn" data-example="CCOC(=O)N1CCN(CC1)C(=O)N2c3ccccc3C[C@H](O)C2">示例1</button>
+                    <button class="btn btn-outline-secondary example-btn" data-example="O=C(O)CC(O)(P(=O)(O)O)P(=O)(O)O">示例2</button>
+                  </div>
+                  <div class="mt-3">
+                    <label for="geminiFocus" class="form-label fw-semibold small">Gemini 关注点</label>
+                    <select id="geminiFocus" class="form-select form-select-sm">
+                      <option value="药化改造">药化改造</option>
+                      <option value="复试讲解">复试讲解</option>
+                      <option value="项目展示总结">项目展示总结</option>
+                    </select>
+                  </div>
+                  <div class="mt-3 small text-secondary" id="predictStatus">等待输入。</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-7">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-body p-4">
+                  <div class="row g-4">
+                    <div class="col-md-5 text-center">
+                      <div id="moleculePlaceholder" class="molecule-placeholder">
+                        点击“预测并解释”后显示分子结构
+                      </div>
+                      <img id="moleculeImage" class="img-fluid rounded border bg-white p-2 d-none" alt="molecule" />
+                    </div>
+                    <div class="col-md-7">
+                      <div id="predictSummary" class="summary-box">预测结果将在这里显示。</div>
+                    </div>
+                  </div>
+                  <div class="row g-4 mt-1">
+                    <div class="col-md-6">
+                      <h6 class="fw-bold">提高预测值的特征</h6>
+                      <div id="positiveTable" class="table-responsive small"></div>
+                    </div>
+                    <div class="col-md-6">
+                      <h6 class="fw-bold">降低预测值的特征</h6>
+                      <div id="negativeTable" class="table-responsive small"></div>
+                    </div>
+                  </div>
+                  <div class="row g-4 mt-1">
+                    <div class="col-12">
+                      <h6 class="fw-bold">Gemini 辅助解释</h6>
+                      <div id="geminiOutput" class="summary-box gemini-box">可选：点击“Gemini 深度解读”生成更自然的药学/项目说明。</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="results" class="section-block alt-bg">
+        <div class="container">
+          <div class="section-header">
+            <h2>关键结果</h2>
+            <p>精选最适合答辩和项目介绍的核心图表。</p>
+          </div>
+          <div class="row g-4">
+            <div class="col-lg-4"><img class="gallery-img" src="{{ url_for('project_files', subpath='figures/14_baseline_vs_enhanced.png') }}" alt="baseline" /></div>
+            <div class="col-lg-4"><img class="gallery-img" src="{{ url_for('project_files', subpath='figures/08_chemical_space.png') }}" alt="chemical_space" /></div>
+            <div class="col-lg-4"><img class="gallery-img" src="{{ url_for('project_files', subpath='figures/22_shap_case_molecules.png') }}" alt="shap_cases" /></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="validation" class="section-block">
+        <div class="container">
+          <div class="section-header">
+            <h2>严格验证</h2>
+            <p>使用 repeated scaffold split，验证模型在新骨架外推场景下的稳定性。</p>
+          </div>
+          <div class="row g-4 align-items-start">
+            <div class="col-lg-7"><img class="gallery-img" src="{{ url_for('project_files', subpath='figures/16_scaffold_repeat_summary.png') }}" alt="scaffold_summary" /></div>
+            <div class="col-lg-5">
+              <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                  <h5 class="fw-bold">Repeated Scaffold Summary</h5>
+                  <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                      <thead><tr><th>模型</th><th>R²均值</th><th>RMSE均值</th></tr></thead>
+                      <tbody>
+                        {% for row in strict_summary %}
+                        <tr>
+                          <td>{{ row['model'] }}</td>
+                          <td>{{ '%.4f'|format(row['r2_mean']) }}</td>
+                          <td>{{ '%.4f'|format(row['rmse_mean']) }}</td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="xai" class="section-block alt-bg">
+        <div class="container">
+          <div class="section-header">
+            <h2>SHAP 可解释性</h2>
+            <p>展示全局重要特征与单分子局部解释，支持“从黑盒预测到药化提示”的表达。</p>
+          </div>
+          <div class="row g-4">
+            <div class="col-lg-6"><img class="gallery-img" src="{{ url_for('project_files', subpath='figures/19_shap_top20_bar.png') }}" alt="shap_bar" /></div>
+            <div class="col-lg-6"><img class="gallery-img" src="{{ url_for('project_files', subpath='figures/22_shap_case_molecules.png') }}" alt="shap_molecules" /></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="api" class="section-block">
+        <div class="container">
+          <div class="section-header">
+            <h2>API 调用</h2>
+            <p>平台提供 JSON API，可接前端、自动化脚本或其他系统。</p>
+          </div>
+          <div class="row g-4">
+            <div class="col-lg-6">
+              <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                  <h5 class="fw-bold">POST /api/predict</h5>
+                  <pre class="code-block">{
+  "smiles": "Cn1c(CN2CCN(CC2)c3ccc(Cl)cc3)nc4ccccc14"
+}</pre>
+                  <p class="small text-secondary mb-0">返回：标准化SMILES、集成预测值、解释模型预测值、分子图像、正负贡献特征。</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                  <h5 class="fw-bold">Gemini API 调用示例</h5>
+                  <pre class="code-block">import requests
+
+response = requests.post(
+    "https://your-space-url.hf.space/api/gemini-explain",
+    json={
+        "smiles": "Cn1c(CN2CCN(CC2)c3ccc(Cl)cc3)nc4ccccc14",
+        "focus": "药化改造"
+    }
+)
+print(response.json())</pre>
+                  <p class="small text-secondary mt-3 mb-0">需要在 Hugging Face Space 的 Secrets 中配置 `ECOSORT_GEMINI_API_KEY`。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  </body>
+</html>
