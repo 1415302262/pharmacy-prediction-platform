@@ -140,6 +140,8 @@
 
 ## Quick Start
 
+如果你只想快速运行项目，不想先看完整介绍，可以直接查看 [QUICK_START.md](QUICK_START.md)。
+
 ### Run the Full Pipeline
 
 ```bash
