@@ -1,137 +1,117 @@
-# Lipophilicity QSAR + 结构特征增强 + 集成学习
+<h1 align="center">Lipophilicity-QSAR</h1>
+<p align="center"><strong>Enhanced Structure Feature Fusion and Ensemble Learning for Drug Property Prediction</strong></p>
+<p align="center">一个面向药物脂溶性预测的端到端 QSAR 项目，融合多模态分子表征、异构集成学习、scaffold-aware 验证与 SHAP 可解释性分析。</p>
 
-这是一个基于**真实公开数据集**完成的药物性质预测项目，任务是：
+<p align="center">
+  <img src="https://img.shields.io/badge/Task-QSAR%20Regression-1f6feb" alt="Task badge">
+  <img src="https://img.shields.io/badge/Dataset-MoleculeNet%20Lipophilicity-2da44e" alt="Dataset badge">
+  <img src="https://img.shields.io/badge/Best%20Test%20R%C2%B2-0.7232-d97706" alt="Best R2 badge">
+  <img src="https://img.shields.io/badge/Validation-Scaffold%20Aware-b35900" alt="Validation badge">
+</p>
 
-> **根据分子结构预测实验脂溶性（lipophilicity / logD）**
+<p align="center">
+  <a href="#overview">Overview</a> •
+  <a href="#highlights">Highlights</a> •
+  <a href="#results">Results</a> •
+  <a href="#visuals">Visuals</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#web-demo">Web Demo</a> •
+  <a href="#project-structure">Project Structure</a>
+</p>
 
-相较于上一版，本次增强版加入了：
+<p align="center">
+  <img src="figures/professional/fig3_model_performance.png" alt="Model performance summary" width="88%">
+</p>
 
-- 更丰富的结构信息：`RDKit 全量2D描述符 + Morgan Fingerprint + MACCS keys`
-- 更完整的结构分析：化学空间、Bemis–Murcko scaffold、代表性结构网格图
-- 更强的建模方案：`XGBoost + CatBoost + PyTorch MLP + 加权集成`
-- 更完整的留痕：所有关键步骤保存到 `docs/worklog/*.md`
-- 结果导出：同时生成 `results/final_results_v2.md` 和 `results/final_results_v2.m`
+## Overview
 
----
+本项目围绕公开真实分子数据集 `Lipophilicity`，根据分子结构预测实验脂溶性 `exp`（连续变量，logD）。整体流程覆盖数据处理、特征工程、模型训练、严格验证、结果解释以及 Web 部署，目标不是只做一个分数，而是完成一个结构完整、展示友好的 QSAR 项目。
 
-## 1. 数据来源
+| Item | Details |
+| --- | --- |
+| Task | 根据分子结构预测实验脂溶性 `exp` |
+| Dataset | MoleculeNet / DeepChem `Lipophilicity` |
+| Scale | 4,200 molecules |
+| Data origin | 真实实验数据，带 `CMPD_CHEMBLID` 映射 |
+| Best model | `Weighted_Ensemble_rich` |
+| Best test metrics | `R² = 0.7232`, `RMSE = 0.6346`, `MAE = 0.4517` |
+| Strict validation | Scaffold-aware repeated split, `R² = 0.7138 ± 0.0215` |
 
-- 数据集：MoleculeNet / DeepChem `Lipophilicity`
-- 下载地址：`https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/Lipophilicity.csv`
-- 样本量：4200 个分子
-- 字段：`CMPD_CHEMBLID`、`exp`、`smiles`
-- 目标：实验脂溶性 `exp`
+## Highlights
 
-该数据属于公开真实数据，不是模拟数据，且含有 `ChEMBL` 编号，适合在药学复试中说明“数据真实、可追溯、与药物数据库相关”。
+| Module | What is included | Why it matters |
+| --- | --- | --- |
+| Feature fusion | RDKit 2D descriptors, Morgan Fingerprint, MACCS Keys | 同时编码理化性质、局部子结构和药效团模式 |
+| Heterogeneous models | XGBoost, CatBoost, PyTorch MLP | 结合树模型与深度学习的互补能力 |
+| Ensemble learning | Validation-based weighted ensemble | 在单模型基础上进一步提升泛化性能 |
+| Reliable evaluation | Random split + scaffold-aware repeated split | 比单纯随机划分更接近真实药物研发场景 |
+| Interpretability | SHAP global/local analysis, scaffold statistics, chemical space visualization | 不只回答“准不准”，还能回答“为什么” |
+| Deployment | Flask + Docker + Hugging Face Space | 可直接展示网页端推理与 API 调用 |
 
----
+### Feature Representation
 
-## 2. 本次增强点
+项目使用三类结构特征对分子进行多视角表征：
 
-### 2.1 结构特征增强
+1. `RDKit` 全量 2D 描述符，经筛选后保留 173 维高价值特征。
+2. `Morgan Fingerprint`，`radius=2`，`2048-bit`。
+3. `MACCS Keys`，`167-bit`。
 
-项目现在同时使用三类分子表征：
+这种组合既能覆盖分子整体理化性质，也能编码局部连接模式和常见结构键特征。
 
-1. **基础理化描述符（13维）**
-2. **RDKit 全量2D描述符（训练集筛选后保留 173 维）**
-3. **结构指纹**
-   - Morgan Fingerprint：2048维
-   - MACCS Keys：167维
+### Modeling Pipeline
 
-增强后，模型不再只看“少量理化性质”，而是同时利用：
+`SMILES -> Featurization -> Base Models -> Weighted Ensemble -> Scaffold-aware Validation -> SHAP Interpretation`
 
-- 分子整体大小、极性、氢键能力
-- 局部子结构片段
-- 常见结构键模式与药效团相关编码
+所有实验留痕和关键步骤日志会自动写入 `docs/worklog/`，核心结果输出至 `results/`，模型文件保存到 `models/`。
 
-### 2.2 结构分析增强
+## Results
 
-新增结构相关输出：
+### Standard Test Split
 
-- `figures/08_chemical_space.png`：化学空间投影图
-- `figures/09_top_scaffolds.png`：高频 scaffold 统计
-- `figures/10_top_scaffold_grid.png`：高频 scaffold 结构图
-- `figures/11_extreme_molecule_grid.png`：高/低脂溶性代表分子结构图
-- `figures/12_feature_family_importance.png`：描述符 / Morgan / MACCS 贡献比较
-- `figures/13_ensemble_weights.png`：集成权重图
-- `figures/14_baseline_vs_enhanced.png`：增强前后效果对比图
-
-### 2.3 模型增强
-
-当前项目包含两类模型：
-
-- **基线模型**
-  - `RF_basic_desc`
-  - `SVR_basic_desc`
-  - `XGB_baseline_desc_fp`
-
-- **增强模型**
-  - `XGB_rich_desc_fp_maccs`
-  - `CatBoost_rich_desc_fp_maccs`
-  - `PyTorch_MLP_rich_desc_fp_maccs`
-  - `Weighted_Ensemble_rich`
-
----
-
-## 3. 最终结果
-
-### 3.1 当前最佳结果
-
-| 模型 | R² | RMSE | MAE |
-|---|---:|---:|---:|
-| Weighted_Ensemble_rich | 0.7232 | 0.6346 | 0.4517 |
+| Model | R² | RMSE | MAE |
+| --- | ---: | ---: | ---: |
+| **Weighted_Ensemble_rich** | **0.7232** | **0.6346** | **0.4517** |
 | XGB_rich_desc_fp_maccs | 0.7043 | 0.6559 | 0.4810 |
 | CatBoost_rich_desc_fp_maccs | 0.6973 | 0.6637 | 0.4862 |
 | PyTorch_MLP_rich_desc_fp_maccs | 0.6967 | 0.6643 | 0.4634 |
-| XGB_baseline_desc_fp | 0.6835 | 0.6787 | 0.5075 |
+| *Baseline (`XGB_desc_fp`)* | *0.6835* | *0.6787* | *0.5075* |
 
-### 3.2 相比上一版的提升
+### Scaffold-Aware Repeated Split
 
-- 上一版最佳模型：`XGB_desc_fp`
-  - Test `R² = 0.6835`
-  - Test `RMSE = 0.6787`
+相比普通随机划分，scaffold-aware 划分更严格，因为它要求训练集和测试集尽量来自不同的骨架结构，更能反映模型面对新化学骨架时的真实泛化能力。
 
-- 本次最佳模型：`Weighted_Ensemble_rich`
-  - Test `R² = 0.7232`
-  - Test `RMSE = 0.6346`
-
-### 3.3 提升幅度
-
-- `RMSE` 降低：`0.0440`
-- `R²` 提升：`0.0397`
-
-这说明：
-
-1. 增加结构表征是有效的；
-2. CatBoost / XGBoost / 深度学习模型之间存在互补性；
-3. 验证集优化的加权集成能够进一步提升泛化性能。
-
----
-
-
-## 3.4 严格验证（scaffold-aware repeated split）
-
-为了提升复试中的科研说服力，我进一步加入了 **5 次重复的 scaffold-aware 严格验证**。
-
-> 说明：该验证方式比随机划分更严格，因此分数通常略低，但对“真实泛化能力”的证明更强。
-
-严格验证平均结果如下：
-
-| 模型 | R² mean ± std | RMSE mean ± std |
-|---|---:|---:|
-| Weighted_Ensemble_scaffold | 0.7138 ± 0.0215 | 0.6489 ± 0.0296 |
+| Model | R² (mean ± std) | RMSE (mean ± std) |
+| --- | ---: | ---: |
+| **Weighted_Ensemble_scaffold** | **0.7138 ± 0.0215** | **0.6489 ± 0.0296** |
 | PyTorch_MLP_rich_scaffold | 0.6945 ± 0.0261 | 0.6698 ± 0.0200 |
 | XGB_rich_scaffold | 0.6847 ± 0.0234 | 0.6811 ± 0.0347 |
 | CatBoost_rich_scaffold | 0.6750 ± 0.0234 | 0.6914 ± 0.0295 |
-| XGB_baseline_scaffold | 0.6472 ± 0.0311 | 0.7200 ± 0.0299 |
+| *Baseline (`XGB_scaffold`)* | *0.6472 ± 0.0311* | *0.7200 ± 0.0299* |
 
-这说明即使在更严格的 scaffold 划分下，增强版模型依然明显优于基线模型。
+### Improvement vs Baseline
 
-## 3.5 SHAP 解释增强
+| Version | Best model | R² | RMSE | MAE |
+| --- | --- | ---: | ---: | ---: |
+| Previous baseline | `XGB_desc_fp` | 0.6835 | 0.6787 | 0.5075 |
+| Enhanced pipeline | `Weighted_Ensemble_rich` | 0.7232 | 0.6346 | 0.4517 |
 
-为了避免项目只停留在“黑箱预测”，我又加入了 SHAP 解释分析：
+- `R²` 提升：`+0.0397`
+- `RMSE` 下降：`-0.0440`
 
-- `results/shap_top20_features.csv`
+这说明更丰富的结构表征和异构模型集成确实带来了稳定收益，而不是偶然波动。
+
+## Interpretability
+
+为避免 QSAR 模型停留在“黑箱预测”，项目加入了 SHAP 全局与局部解释分析。当前全局贡献最高的前 5 个特征为：
+
+1. `MolLogP`
+2. `fr_COO`
+3. `VSA_EState5`
+4. `MACCS_104`
+5. `SMR_VSA10`
+
+相关输出文件包括：
+
 - `results/shap_case_studies.md`
 - `figures/19_shap_top20_bar.png`
 - `figures/20_shap_beeswarm_top20.png`
@@ -140,155 +120,115 @@
 - `figures/21_shap_local_largeerror.png`
 - `figures/22_shap_case_molecules.png`
 
-前 5 个全局重要特征为：
+## Visuals
 
-1. `MolLogP`
-2. `fr_COO`
-3. `VSA_EState5`
-4. `MACCS_104`
-5. `SMR_VSA10`
+<p align="center">
+  <img src="figures/professional/fig2_chemical_space.png" alt="Chemical space" width="48%">
+  <img src="figures/professional/fig8_scaffold_analysis.png" alt="Scaffold analysis" width="48%">
+</p>
 
-这让你在复试时不仅能讲“模型准不准”，还能讲“模型为什么这么判断”。
+<p align="center">
+  <img src="figures/professional/fig6_feature_importance.png" alt="Feature importance" width="48%">
+  <img src="figures/professional/fig7_ensemble_weights.png" alt="Ensemble weights" width="48%">
+</p>
 
-## 4. 为什么这个项目更适合复试
+<p align="center">
+  <img src="figures/professional/fig4_ensemble_prediction_scatter.png" alt="Ensemble prediction scatter" width="88%">
+</p>
 
-增强版更适合复试的原因：
+这些图分别对应化学空间分布、骨架统计、特征贡献和集成预测效果，比较适合放在 GitHub 首页作为项目视觉锚点。
 
-- **数据真实**：公开数据集，可追溯
-- **药学相关**：脂溶性与 ADME 密切相关
-- **结构信息更充分**：不仅有指纹，还有 scaffold 与化学空间分析
-- **模型更完整**：传统机器学习 + 深度学习 + 集成学习
-- **结果更强**：实际测试性能优于上一版
-- **材料更齐全**：报告、图、表、工作留痕、结果导出脚本全部齐备
+## Quick Start
 
----
-
-## 5. 关键输出文件
-
-### 结果文件
-
-- `results/metrics_summary.csv`
-- `results/test_predictions.csv`
-- `results/run_summary.json`
-- `results/baseline_vs_enhanced.csv`
-- `results/final_results_v2.md`
-- `results/final_results_v2.m`
-
-### 模型文件
-
-- `models/xgb_baseline_desc_fp.json`
-- `models/xgb_rich_desc_fp_maccs.json`
-- `models/catboost_rich_desc_fp_maccs.cbm`
-- `models/pytorch_mlp_rich_desc_fp_maccs.pt`
-- `models/rich_descriptor_processor.pkl`
-
-### 留痕文件
-
-- `docs/worklog/2026-03-08_step_01_audit.md`
-- `docs/worklog/2026-03-08_step_02_design.md`
-- `docs/worklog/2026-03-08_step_03_experiments.md`
-- `docs/worklog/2026-03-08_step_04_implementation.md`
-- `docs/worklog/2026-03-08_step_05_final_results.md`
-
----
-
-
-## 5.1 在线演示平台（Hugging Face Space）
-
-项目已新增一个可公开部署的 Web 演示平台，位置：
-
-- `hf_space/app.py`
-- `hf_space/templates/index.html`
-- `hf_space/static/style.css`
-- `hf_space/Dockerfile`
-- `hf_space/README.md`
-
-平台支持：
-
-- 单分子 `SMILES` 预测
-- 集成模型结果展示
-- 严格 scaffold 验证结果展示
-- SHAP 可解释性内容展示
-- JSON API 调用（`POST /api/predict`）
-
-### 平台技术选型
-
-这次采用的是：
-
-- **Flask**：负责网页与 API
-- **Docker**：用于 Hugging Face Spaces 部署
-- **预训练模型加载**：不在平台上训练，只做推理
-
-### 为什么这样设计
-
-- 更适合做成“作品级展示页面”
-- 能兼顾网页可视化和 JSON API
-- 适合后续部署到 Hugging Face Spaces 的 `docker` SDK
-
-### 本地启动方式
-
-```bash
-cd /public/home/zhw/cptac/projects/experiment/qsar_project/hf_space
-python app.py
-```
-
-默认端口：`7860`
-
-### 刷新 Hugging Face 打包资产
-
-如果主项目模型或结果更新，可重新执行：
-
-```bash
-python scripts/build_hf_space_bundle.py
-```
-
-这会把平台所需的模型、结果和精选图表同步到 `hf_space/assets/`。
-
-## 6. 运行方式
+### Run the Full Pipeline
 
 ```bash
 conda activate cptac
-cd /public/home/zhw/cptac/projects/experiment/qsar_project
 python run.py
 ```
 
----
+### Run Strict Validation and SHAP Analysis
 
-## 7. 复试时可以怎么讲
+```bash
+python scripts/run_scaffold_shap_validation.py
+```
 
-### 30秒版本
+### Key Outputs
 
-> 我做了一个基于真实公开药物数据的 QSAR 项目，任务是根据分子结构预测实验脂溶性。第一版使用基础描述符和分子指纹，第二版进一步加入 RDKit 全量描述符、MACCS 结构键，并结合 XGBoost、CatBoost 和 PyTorch MLP 做加权集成，最终把测试集 R² 从 0.683 提升到 0.723，RMSE 从 0.679 降到 0.635。同时我还做了 scaffold 和化学空间分析，使这个项目不仅有预测结果，也有结构层面的解释。
+- Results summary: `results/final_results_v2.md`
+- Test predictions: `results/test_predictions.csv`
+- Scaffold validation: `results/scaffold_validation_results.md`
+- Final models: `models/`
+- Work logs: `docs/worklog/`
 
----
+## Web Demo
 
-## 8. 项目结构
+项目包含一个可公开部署的 Web 演示平台，支持单分子 `SMILES` 预测、结果展示和 JSON API 调用。
+
+### Online Demo
+
+[Hugging Face Spaces Demo](https://students-cs-pharmacy-prediction-platform.hf.space)
+
+### Local Launch
+
+```bash
+cd hf_space
+python app.py
+```
+
+默认访问地址：`http://localhost:7860`
+
+### JSON API Example
+
+接口：`POST /api/predict`
+
+```json
+{
+  "smiles": "Cn1c(CN2CCN(CC2)c3ccc(Cl)cc3)nc4ccccc14"
+}
+```
+
+## Project Structure
+
+<details>
+<summary>Expand repository tree</summary>
 
 ```text
 qsar_project/
-├── data/
+├── data/                  # 原始与示例数据
 ├── docs/
-│   └── worklog/
-├── figures/
-├── models/
-├── results/
-├── src/
+│   └── worklog/           # 实验过程日志与留痕
+├── figures/               # 数据分析、性能对比、SHAP、Scaffold 图表
+├── hf_space/              # Web 演示平台与 Docker 部署配置
+├── models/                # 训练好的模型与预处理器
+├── results/               # 指标汇总、预测结果、验证报告
+├── scripts/               # 训练、验证、打包与发布脚本
+├── src/                   # 核心源码
 │   ├── data_utils.py
 │   ├── featurization.py
 │   ├── train_model.py
 │   ├── evaluate.py
-│   └── structure_analysis.py
-├── run.py
-├── QUICK_START.md
-└── report.md
+│   ├── scaffold_validation.py
+│   ├── structure_analysis.py
+│   ├── statistical_analysis.py
+│   └── professional_viz.py
+├── run.py                 # 主执行入口
+├── QUICK_START.md         # 快速启动说明
+├── README.md              # 项目主说明
+└── project_overview.md    # GitHub 展示版概览
 ```
 
----
+</details>
 
-## 9. 下一步还能扩展什么
+## Why This Project Stands Out
 
-- 更严格的 `scaffold split`
-- Graph Neural Network（GNN）
-- SHAP 解释增强
-- 外部验证集
-- 多任务性质联合预测
+- 任务聚焦明确，直接对应药物发现中重要的 ADME 相关性质预测。
+- 结构表征、模型构建、严格验证和解释分析形成了完整闭环，不只是单点实验。
+- 页面中直接内嵌关键图表，更适合 GitHub 场景下的快速浏览和展示。
+- 代码、结果、模型和实验留痕同时保留，可复现性和展示性都比较完整。
+
+## Future Work
+
+- [ ] 引入图神经网络（GNN）进行端到端分子表征学习。
+- [ ] 增加完全独立的外部验证集（external validation set）。
+- [ ] 扩展为多任务学习，同时预测脂溶性与其他 ADME 相关性质。
